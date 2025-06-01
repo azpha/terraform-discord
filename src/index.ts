@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import { Client, Events, GatewayIntentBits } from "discord.js";
 import fs from "fs";
 import { exec } from "child_process";
@@ -88,7 +88,7 @@ app.get("/log/:name", (req: Request, res: Response) => {
 });
 
 // webhook endpoint
-app.post("/webhook", (req: Request, res: Response) => {
+app.post("/webhook", verifyAuth, (req: Request, res: Response) => {
   try {
     const channelToSendTo = process.env.DISCORD_CHANNEL_ID
       ? client.channels.cache.get(process.env.DISCORD_CHANNEL_ID)
@@ -172,12 +172,27 @@ app.post("/webhook", (req: Request, res: Response) => {
   }
 });
 
+function verifyAuth(req: Request, res: Response, next: NextFunction) {
+  const queryToken = req.query.token;
+  const processToken = process.env.DEPLOY_TOKEN;
+
+  if (queryToken === processToken) {
+    next();
+  } else {
+    res.status(401).json({
+      status: 401,
+    });
+  }
+}
+
 // start Discord client
-if (process.env.DISCORD_TOKEN) {
+if (process.env.DISCORD_TOKEN && process.env.DEPLOY_TOKEN) {
   app.listen(3000, () => {
     console.log("[Express] Started web server");
     client.login(process.env.DISCORD_TOKEN);
   });
 } else {
-  throw new Error("No Discord application token provided! See documentation");
+  throw new Error(
+    "No Discord application token or deploy token provided! See documentation"
+  );
 }
