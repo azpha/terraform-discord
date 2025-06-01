@@ -41,7 +41,7 @@ client.on(Events.MessageCreate, async (message) => {
           );
 
           exec(
-            `terraform -chdir="${pathToTerraform}" apply -auto-approve`,
+            `/usr/bin/terraform -chdir="${pathToTerraform}" apply -auto-approve`,
             (err, stderr, stdout) => {
               const arr = stderr.split("\n");
 
@@ -98,13 +98,13 @@ app.post("/webhook", (req: Request, res: Response) => {
     if (pathToTerraform && fs.existsSync(pathToTerraform) && channelToSendTo) {
       // run init separately
       exec(
-        `terraform -chdir="${pathToTerraform}" init`,
+        `/usr/bin/terraform -chdir="${pathToTerraform}" init`,
         (err, stdout, stderr) => {
           if (err || stderr) {
             console.error("Error during init!", err, stderr);
           } else {
             exec(
-              `terraform -chdir="${pathToTerraform}" plan -no-color -out="${pathToTerraform}/tfplan"`,
+              `/usr/bin/terraform -chdir="${pathToTerraform}" plan -no-color -out="${pathToTerraform}/tfplan"`,
               (err, stdout, stderr) => {
                 if (stderr) {
                   console.error(stderr);
@@ -151,7 +151,8 @@ app.post("/webhook", (req: Request, res: Response) => {
       if (!pathToTerraform) message = "Terraform directory was not defined";
       if (pathToTerraform && !fs.existsSync(pathToTerraform))
         message = "Terraform directory does not exist";
-      if (!process.env.DISCORD_CHANNEL) message = "Discord channel not defined";
+      if (!process.env.DISCORD_CHANNEL_ID)
+        message = "Discord channel not defined";
       if (!channelToSendTo) message = "Could not find Discord channel";
 
       res.status(500).json({
